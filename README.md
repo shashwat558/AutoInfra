@@ -1,135 +1,118 @@
-# Turborepo starter
+# AutoInfra
 
-This Turborepo starter is maintained by the Turborepo core team.
+> **AI-native DevOps engine that converts natural language into production-ready infrastructure**
 
-## Using this example
+Describe what you want, and AutoInfra designs the architecture, generates Terraform or Vercel configs, validates them, writes the files using Cline, deploys them through Kestra and Vercel, and reviews the generated code with CodeRabbit.
 
-Run the following command:
+AutoInfra removes the need for manual DevOps work. It turns infrastructure from a slow and complex process into a simple conversation.
 
-```sh
-npx create-turbo@latest
+---
+
+## Why AutoInfra
+
+Modern developers struggle with cloud complexity, scattered configuration formats, and slow deployment pipelines. AutoInfra solves this by providing one unified system that performs five major functions:
+
+- **Understand** natural language specifications
+- **Design** complete cloud architecture
+- **Generate** configuration files and infrastructure code
+- **Validate** everything for correctness and safety
+- **Execute** deployments and auto-review the output
+
+**AutoInfra is the first fully autonomous DevOps system powered by a multi-agent architecture.**
+
+---
+
+## Core Features
+
+### Natural Language to Infrastructure
+
+Type instructions such as:
+
+```bash
+Deploy a FastAPI backend with Postgres, Redis cache, 
+staging pipeline, monitoring and autoscaling.
 ```
 
-## What's inside?
+AutoInfra converts this into a complete blueprint.
 
-This Turborepo includes the following packages/apps:
+### Multi-Agent Architecture
 
-### Apps and Packages
+AutoInfra uses four specialized **Oumi** agents:
 
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
+#### **Infra Designer Agent**
+Interprets user input and creates the full architecture model.
 
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
+#### **Infra Generator Agent**
+Generates Terraform, serverless files, Vercel config, Docker files and diagrams.
 
-### Utilities
+#### **Validator Agent**
+Ensures correctness with linting, schema checks and cloud compatibility rules.
 
-This Turborepo has some additional tools already setup for you:
+#### **Deploy Agent**
+Deploys the final infrastructure using Vercel or Terraform and streams logs.
 
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
+### Cline Powered Code Execution
 
-### Build
+Cline writes the generated files into the `infra` folder, applies patches, and organizes the folder structure.
 
-To build all apps and packages, run the following command:
+### 🔄 Kestra Orchestrated Pipelines
 
-```
-cd my-turborepo
+Kestra coordinates all agents and tasks. It is the central workflow engine for AutoInfra.
 
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo build
+### 🔍 Auto Review with CodeRabbit
 
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo build
-yarn dlx turbo build
-pnpm exec turbo build
-```
+Whenever code is generated, a Git PR is opened and CodeRabbit provides a complete automated review.
 
-You can build a specific package by using a [filter](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters):
+### 🎯 Two Interaction Modes
 
-```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo build --filter=docs
+Use either the **UI** or the **CLI** to interact with AutoInfra.
 
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo build --filter=docs
-yarn exec turbo build --filter=docs
-pnpm exec turbo build --filter=docs
-```
+---
 
-### Develop
+## System Architecture
 
-To develop all apps and packages, run the following command:
-
-```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo dev
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo dev
-yarn exec turbo dev
-pnpm exec turbo dev
+```mermaid
+graph TD
+    A[User Input] --> B[UI or CLI]
+    B --> C[Kestra Workflow]
+    C --> D[Oumi Agents]
+    D --> E[Cline Code Executor]
+    E --> F[Validator Agent]
+    F --> G[Deploy Agent]
+    G --> H[Vercel and Terraform]
+    H --> I[CodeRabbit Review]
 ```
 
-You can develop a specific package by using a [filter](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters):
+**Flow Overview:**
 
 ```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo dev --filter=web
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo dev --filter=web
-yarn exec turbo dev --filter=web
-pnpm exec turbo dev --filter=web
+User Input → UI/CLI → Kestra Workflow → Oumi Agents → 
+Cline Code Executor → Validator Agent → Deploy Agent → 
+Vercel/Terraform → CodeRabbit Review
 ```
 
-### Remote Caching
+---
 
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
-
-Turborepo can use a technique known as [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
-
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
+## Repository Structure
 
 ```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo login
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo login
-yarn exec turbo login
-pnpm exec turbo login
+autoInfra/
+├── apps/
+│   ├── dashboard/          # Next.js UI
+│   ├── orchestrator/       # Kestra workflows
+│   └── cli/                # autoinfra CLI
+│
+├── packages/
+│   ├── agents/             # Oumi agents
+│   ├── prompts/            # Prompt templates
+│   ├── schemas/            # Infra schemas
+│   └── utils/              # Shared utilities
+│
+├── infra/
+│   ├── generated/          # Code written by Cline
+│   └── deployments/        # Deploy artifacts
+│
+└── turbo.json
 ```
 
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
-
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
-
-```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo link
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo link
-yarn exec turbo link
-pnpm exec turbo link
-```
-
-## Useful Links
-
-Learn more about the power of Turborepo:
-
-- [Tasks](https://turborepo.com/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.com/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.com/docs/reference/configuration)
-- [CLI Usage](https://turborepo.com/docs/reference/command-line-reference)
+---
