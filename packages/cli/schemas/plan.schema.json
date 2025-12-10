@@ -1,0 +1,148 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://autoinfra.dev/schemas/plan.json",
+  "type": "object",
+  "required": ["version", "cloud", "region", "deploymentMode", "services", "cost", "retention", "monitoring", "selfHealing"],
+  "properties": {
+    "version": { "type": "string", "pattern": "^1\\.0\\.0$" },
+    "cloud": { "type": "string", "enum": ["aws", "gcp", "azure"] },
+    "region": { "type": "string" },
+    "deploymentMode": { "type": "string", "enum": ["kubernetes", "serverless", "hybrid"] },
+    "autoscalingDefaults": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/autoscalingRule" }
+    },
+    "cost": { "$ref": "#/definitions/costConstraint" },
+    "retention": { "$ref": "#/definitions/retentionPolicy" },
+    "services": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/service" },
+      "minItems": 1
+    },
+    "queues": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/queue" }
+    },
+    "jobs": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/job" }
+    },
+    "crons": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/cron" }
+    },
+    "monitoring": {
+      "type": "object",
+      "required": ["thresholds"],
+      "properties": {
+        "thresholds": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/monitoringThreshold" }
+        }
+      }
+    },
+    "selfHealing": {
+      "type": "object",
+      "required": ["enabled", "driftDetectionIntervalMinutes", "maxAutoFixesPerRun"],
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "driftDetectionIntervalMinutes": { "type": "integer", "minimum": 1 },
+        "maxAutoFixesPerRun": { "type": "integer", "minimum": 0 }
+      }
+    }
+  },
+  "definitions": {
+    "autoscalingRule": {
+      "type": "object",
+      "required": ["metric", "target", "minReplicas", "maxReplicas"],
+      "properties": {
+        "metric": { "type": "string", "enum": ["cpu", "memory", "rps", "latency", "queue_depth"] },
+        "target": { "type": "number" },
+        "minReplicas": { "type": "integer", "minimum": 1 },
+        "maxReplicas": { "type": "integer", "minimum": 1 },
+        "cooldownSeconds": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "costConstraint": {
+      "type": "object",
+      "required": ["monthlyBudgetUsd", "hardLimit", "alertThresholds"],
+      "properties": {
+        "monthlyBudgetUsd": { "type": "number", "minimum": 0 },
+        "hardLimit": { "type": "boolean" },
+        "alertThresholds": {
+          "type": "array",
+          "items": { "type": "number", "minimum": 0, "maximum": 200 }
+        }
+      }
+    },
+    "retentionPolicy": {
+      "type": "object",
+      "properties": {
+        "logsDays": { "type": "integer", "minimum": 1 },
+        "metricsDays": { "type": "integer", "minimum": 1 },
+        "backupsDays": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "monitoringThreshold": {
+      "type": "object",
+      "required": ["name", "metric", "threshold", "comparison", "window", "severity"],
+      "properties": {
+        "name": { "type": "string" },
+        "metric": { "type": "string" },
+        "threshold": { "type": "number" },
+        "comparison": { "type": "string", "enum": [">", ">=", "<", "<="] },
+        "window": { "type": "string" },
+        "severity": { "type": "string", "enum": ["warning", "critical"] }
+      }
+    },
+    "service": {
+      "type": "object",
+      "required": ["name", "type", "runtime", "path"],
+      "properties": {
+        "name": { "type": "string" },
+        "type": { "type": "string", "enum": ["api", "worker"] },
+        "runtime": { "type": "string", "enum": ["node", "python", "go", "docker"] },
+        "path": { "type": "string" },
+        "env": {
+          "type": "object",
+          "additionalProperties": { "type": "string" }
+        },
+        "autoscaling": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/autoscalingRule" }
+        }
+      }
+    },
+    "queue": {
+      "type": "object",
+      "required": ["name", "type"],
+      "properties": {
+        "name": { "type": "string" },
+        "type": { "type": "string", "enum": ["sqs", "pubsub", "rabbitmq", "kafka"] },
+        "retentionSeconds": { "type": "integer", "minimum": 60 },
+        "visibilityTimeoutSeconds": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "job": {
+      "type": "object",
+      "required": ["name", "type", "targetService", "handler"],
+      "properties": {
+        "name": { "type": "string" },
+        "type": { "type": "string", "enum": ["cron", "oneoff"] },
+        "schedule": { "type": "string" },
+        "targetService": { "type": "string" },
+        "handler": { "type": "string" }
+      }
+    },
+    "cron": {
+      "type": "object",
+      "required": ["name", "schedule", "targetService", "handler"],
+      "properties": {
+        "name": { "type": "string" },
+        "schedule": { "type": "string" },
+        "targetService": { "type": "string" },
+        "handler": { "type": "string" }
+      }
+    }
+  }
+}
