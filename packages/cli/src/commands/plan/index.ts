@@ -91,6 +91,7 @@ export function registerPlanCommand(program:Command){
 
                 const validate = ajv.compile(planSchema);
                 const valid = validate(plan);
+                console.log(valid)
 
                 if(!valid){
                     spinner.fail("plan.json validation failed");
@@ -101,8 +102,12 @@ export function registerPlanCommand(program:Command){
                 await fs.writeJson("plan.json", plan, {spaces: 2});
                 spinner.succeed("plan.json created");
 
-            } catch (error) {
                 
+
+            } catch (error) {
+                spinner.fail("planning step failed due to some issues");
+                console.error(error);
+                process.exit(1);
             }
          })
 }
