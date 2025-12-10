@@ -1,0 +1,5 @@
+reviews:
+  auto_review: true
+  review_level: deep
+  comment_mode: diff
+  enable_security_review: true
