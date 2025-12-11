@@ -17,7 +17,7 @@
     "services": {
       "type": "array",
       "items": { "$ref": "#/definitions/service" },
-      "minItems": 1
+      "minItems": 0
     },
     "queues": {
       "type": "array",
