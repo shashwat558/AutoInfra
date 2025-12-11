@@ -37,7 +37,7 @@ export const AgentResultSchema = z.object({
 export type AgentResult = z.infer<typeof AgentResultSchema>;
 
 const google = createGoogleGenerativeAI({
-  apiKey: "AIzaSyDrcoIEAot68qbWmaK5g6IWx8FAd7YoAQc"
+  apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY!
 });
 
 const model = google("gemini-2.5-flash");
