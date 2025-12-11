@@ -1,6 +1,7 @@
 import {Command} from "commander";
 import { registerInitCommand } from "./commands/init";
 import { registerPlanCommand } from "./commands/plan";
+import { registerGenerateCommand } from "./commands/generate";
 
 const program = new Command();
 
@@ -11,5 +12,6 @@ program
 
 registerInitCommand(program)
 registerPlanCommand(program)
+registerGenerateCommand(program)
 
 program.parse();

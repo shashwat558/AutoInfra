@@ -45,6 +45,7 @@ export interface ServiceConfigBase {
   name: string;
   runtime: ServiceRuntime;
   path: string;
+  image?: string;
   env?: Record<string, string>;
   autoscaling?: AutoscalingRule[];
   monitoring?: MonitoringThreshold[];
@@ -81,6 +82,7 @@ export interface JobConfig {
 export type ServiceConfig = ApiServiceConfig | WorkerServiceConfig;
 
 export interface Plan {
+  project?: string
   version: string;
   cloud: CloudProvider;
   region: string;

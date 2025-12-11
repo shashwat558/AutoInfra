@@ -1,71 +1,118 @@
 import { Plan } from "../types/plan";
 import path from "path";
 import fs from "fs-extra";
-import { google} from "@ai-sdk/google";
-import { generateText } from "ai";
-interface AgentResult {
-    terraformHints?: any;
-    kubernetesHints?: any
-}
+import z from "zod";
+import dotenv from "dotenv";
+import { createGoogleGenerativeAI } from "@ai-sdk/google";
+import { generateObject } from "ai";
 
-const model = google('gemini-2.5-flash');
+dotenv.config();
 
-export async function invokeInfraAgent(plan: Plan) : Promise<AgentResult>{
-    const prompt = buildInfraPrompt(plan);
-    const agentConfigPath = path.resolve("ai/oumi/agent_config.yaml");
+export const AgentResultSchema = z.object({
+  terraformHints: z
+    .object({
+      raw: z.string().optional(),
+      moduleSnippets: z
+        .object({
+          example: z.string().optional(), // 👈 ensures object is non-empty
+        })
+        .catchall(z.string())
+        .optional(),
+    })
+    .optional(),
+  kubernetesHints: z
+    .object({
+      raw: z.string().optional(),
+      serviceOverlays: z
+        .object({
+          example: z.string().optional(), // 👈 ensures object is non-empty
+        })
+        .catchall(z.string())
+        .optional(),
+    })
+    .optional(),
+});
 
-    const {text} = await generateText({
-        model: model,
-        prompt: prompt
+
+export type AgentResult = z.infer<typeof AgentResultSchema>;
+
+const google = createGoogleGenerativeAI({
+  apiKey: "AIzaSyDrcoIEAot68qbWmaK5g6IWx8FAd7YoAQc"
+});
+
+const model = google("gemini-2.5-flash");
+
+export async function invokeInfraAgent(plan: Plan): Promise<AgentResult> {
+  const prompt = buildInfraPrompt(plan);
+  const aiDir = path.resolve("ai/oumi");
+
+  await fs.ensureDir(aiDir);
+  await fs.writeFile(path.join(aiDir, "agent_config.yaml"), prompt, "utf-8");
+
+  console.log("🤖 Invoking AutoInfra synthesis agent (Gemini)...");
+
+  try {
+    const { object } = await generateObject({
+      model,
+      prompt,
+      schema: AgentResultSchema,
+      temperature: 0.2,
+      maxOutputTokens: 8000,
     });
 
-    console.log(text)
-    
-    const parsedResult = JSON.parse(text) as AgentResult;
+    await fs.writeJson(path.join(aiDir, "last_response.json"), object, {
+      spaces: 2,
+    });
 
-    await fs.writeFile(agentConfigPath, text);
-    console.log("Agent finished sythesis");
+    console.log("✅ Oumi (Gemini) finished synthesis");
+    return object;
+  } catch (err: any) {
+    console.error("💥 Oumi (Gemini) agent failed:", err.message);
     return {
-        terraformHints: parsedResult.terraformHints,
-        kubernetesHints: parsedResult.kubernetesHints
-    
-
+      terraformHints: { raw: "# Error generating Terraform" },
+      kubernetesHints: { raw: "# Error generating Kubernetes" },
+    };
+  }
 }
 
 function buildInfraPrompt(plan: Plan): string {
-    return `
-    You are AutoInfra infrastructure synthesis agent.
+  return `
+You are AutoInfra — an AI infrastructure synthesis agent.
 
-    GOAL
-    - Convert the following plan.json into production-ready Terraform and Kubernetes manifests.
-    - Optimize for correctness, cost limits, autoscaling, and observability.
-    - Respect selfHealing configuration and monitoring thresholds.
+GOAL:
+Convert the following plan.json into production-ready Terraform and Kubernetes code.
 
-    CONSTRAINTS
-    - All cloud resources MUST be declarative and idempotent.
-    - Do not hardcode secrets.
-    - Generate safe defaults: small instance sizes, reasonable autoscaling bounds.
-    - Assume this repository layout:
+CONSTRAINTS:
+- Must be declarative, idempotent, and deployable.
+- Do not hardcode secrets.
+- Generate minimal, correct, cost-efficient infra.
+- Follow this folder structure:
+  infra/terraform/
+  infra/kubernetes/
+  kestra/flows/
+  ai/codemods/
 
-    infra/terraform/
-    infra/kubernetes/
-    kestra/flows/
-    ai/codemods/
+INPUT PLAN.JSON:
+\`\`\`json
+${JSON.stringify(plan, null, 2)}
+\`\`\`
 
-    INPUT PLAN.JSON
-    \`\`\`json
-    ${JSON.stringify(plan, null, 2)}
-    \`\`\`
-
-    REMEMBER    
-    - Drift detection will compare this plan.json to live state.
-    - Self-healing will rely on codemods in ai/codemods/.
-    OUTPUT FORMAT
-    Return only valid JSON with this schema:
-
-        {
-        "terraformHints": "<terraform HCL code>",
-        "kubernetesHints": "<kubernetes yaml>"
-        }
-    `
-}}
+OUTPUT FORMAT (valid JSON only):
+{
+  "terraformHints": {
+    "raw": "Terraform main.tf content",
+    "moduleSnippets": {
+      "api": "Terraform for api",
+      "worker": "Terraform for worker"
+    }
+  },
+  "kubernetesHints": {
+    "raw": "Full YAML for common infra",
+    "serviceOverlays": {
+      "api": "api-specific YAML",
+      "worker": "worker-specific YAML"
+    }
+  }
+}
+`;
+}
