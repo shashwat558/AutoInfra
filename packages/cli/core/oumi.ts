@@ -26,7 +26,7 @@ export const AgentResultSchema = z.object({
 export type AgentResult = z.infer<typeof AgentResultSchema>;
 
 const google = createGoogleGenerativeAI({
-  apiKey: ""
+  apiKey: "AIzaSyBIAZsy4ihB6zExr4xTpEDN5jwU8l3FO3c"
 });
 
 const model = google("gemini-2.5-flash");
@@ -37,24 +37,22 @@ async function handleInfraOutput(result: AgentResult, aiDir: string) {
   await fs.ensureDir(tfDir);
   await fs.ensureDir(k8sDir);
 
-  // 1. Write the main files
   const tfRaw = result?.terraformHints?.raw || "# AutoInfra: No Terraform 'raw' output";
   const k8sRaw = result?.kubernetesHints?.raw || "# AutoInfra: No Kubernetes 'raw' output";
 
   await fs.writeFile(path.join(tfDir, "main.tf"), tfRaw, "utf-8");
   await fs.writeFile(path.join(k8sDir, "main.yaml"), k8sRaw, "utf-8");
 
-  console.log("✅ Wrote /infra/terraform/main.tf");
-  console.log("✅ Wrote /infra/kubernetes/main.yaml");
+  console.log(" Wrote /infra/terraform/main.tf");
+  console.log(" Wrote /infra/kubernetes/main.yaml");
   
-  // 2. Write module/overlay snippets
   const tfSnippets = result?.terraformHints?.moduleSnippets;
   if (tfSnippets && typeof tfSnippets === "object") {
     for (const [filename, content] of Object.entries(tfSnippets)) {
       if (typeof content === "string") {
         const filePath = path.join(tfDir, filename);
         await fs.writeFile(filePath, content, "utf-8");
-        console.log(`✅ Wrote /infra/terraform/${filename}`);
+        console.log(` Wrote /infra/terraform/${filename}`);
       }
     }
   }
@@ -65,7 +63,7 @@ async function handleInfraOutput(result: AgentResult, aiDir: string) {
       if (typeof content === "string") {
         const filePath = path.join(k8sDir, filename);
         await fs.writeFile(filePath, content, "utf-8");
-        console.log(`✅ Wrote /infra/kubernetes/${filename}`);
+        console.log(` Wrote /infra/kubernetes/${filename}`);
       }
     }
   }
@@ -106,7 +104,7 @@ export async function invokeInfraAgent(plan: Plan): Promise<AgentResult> {
   console.log("🤖 Invoking AutoInfra synthesis agent (Gemini)...");
 
   try {
-    // 1. Attempt structured generation first
+
     const { object } = await generateObject({
       model,
       prompt,
@@ -119,10 +117,9 @@ export async function invokeInfraAgent(plan: Plan): Promise<AgentResult> {
     await handleInfraOutput(object, aiDir); // Pass aiDir for logging
     return object;
   } catch (err: any) {
-    console.error("💥 Oumi (Gemini) agent failed:", err.message);
-    console.log("⚠️ Falling back to raw text generation and recovery...");
+    console.error("Oumi (Gemini) agent failed:", err.message);
+    console.log("Falling back to raw text generation and recovery...");
 
-    // 2. Fallback to raw response
     const { text: rawText } = await generateText({
       model,
       prompt,
@@ -130,7 +127,7 @@ export async function invokeInfraAgent(plan: Plan): Promise<AgentResult> {
       maxOutputTokens: 8000,
     });
 
-    console.log("🪶 Raw Gemini response saved to ai/oumi/raw_response.txt");
+    console.log("Raw Gemini response saved to ai/oumi/raw_response.txt");
     await fs.writeFile(path.join(aiDir, "raw_response.txt"), rawText, "utf-8");
 
     const cleaned = cleanJSON(rawText);
@@ -147,13 +144,13 @@ export async function invokeInfraAgent(plan: Plan): Promise<AgentResult> {
 
         if (safeParse.success) {
           parsed = safeParse.data;
-          console.log("✅ Cleaned and parsed malformed JSON successfully.");
+          console.log(" Cleaned and parsed malformed JSON successfully.");
           // Writing to recovered_response.json is now handled in handleInfraOutput
         } else {
-          console.warn(`⚠️ JSON was valid but did not match schema: ${safeParse.error.message.substring(0, 100)}...`);
+          console.warn(` JSON was valid but did not match schema: ${safeParse.error.message.substring(0, 100)}...`);
         }
       } catch {
-        console.warn("⚠️ Cleaned string was not valid JSON after all.");
+        console.warn(" Cleaned string was not valid JSON after all.");
       }
     }
 
@@ -162,7 +159,7 @@ export async function invokeInfraAgent(plan: Plan): Promise<AgentResult> {
       fallbackResult = parsed;
     } else {
       // 6. TRIPLE FALLBACK: If everything fails, write the raw text into 'raw' fields
-      console.error("❌ Recovery failed. Writing raw text as placeholder infra.");
+      console.error(" Recovery failed. Writing raw text as placeholder infra.");
       fallbackResult = {
         terraformHints: { raw: rawText },
         kubernetesHints: { raw: rawText },
